@@ -1,5 +1,4 @@
 import base64
-import json
 import time
 import os
 from fastapi import HTTPException
@@ -7,9 +6,9 @@ from fastapi import HTTPException
 import cv2
 import numpy as np
 from deepface import DeepFace
-from PIL import Image
-from scipy.spatial.distance import cosine
 
+global model_name
+model_name = 'Facenet512'
 
 async def verify_doc_with_liveness(img, vid):
     try:
@@ -53,7 +52,8 @@ async def verify_doc_with_liveness(img, vid):
             array.append(
                 DeepFace.verify(
                     img_path,
-                    imageDataFromFrameBase64
+                    imageDataFromFrameBase64,
+                    model_name=model_name
                 ).get("verified"))
 
         end_time = time.time()
@@ -76,12 +76,13 @@ async def verify_doc_with_liveness(img, vid):
 async def verify(img1, img2):
     img_path_1 = await get_path(img1)
     img_path_2 = await get_path(img2)
-    return DeepFace.verify(img_path_1, img_path_2)
+
+    return DeepFace.verify(img_path_1, img_path_2, model_name=model_name)
 
 
 async def get_represent(img1):
     img_path = await get_path(img1)
-    return DeepFace.represent(img_path)
+    return DeepFace.represent(img_path, model_name=model_name)
 
 
 async def get_path(img1):
@@ -93,48 +94,3 @@ async def get_path(img1):
 
     # Decode the numpy array into an image
     return cv2.imdecode(np_arr1, cv2.IMREAD_COLOR)
-
-
-def default():
-    # Compare two images directly
-    result = DeepFace.verify(
-        "pics/yernur3.png",
-        "pics/yernur.png"
-        # "yernur4.png",
-        # "yernurDoc.png"
-    )
-
-    imageFile = "pics/yernurDoc"
-    facialArea = DeepFace.extract_faces("%s.png" % imageFile)
-    print(facialArea)
-    xy = facialArea.__getitem__(0).get("facial_area")
-    x = xy.get("x") - 50
-    y = xy.get("y") - 50
-    w = xy.get("w") + 100
-    h = xy.get("h") + 100
-    crop_area = (x, y, x + w, y + h)
-    image = Image.open("%s.png" % imageFile)
-    cropped_image = image.crop(crop_area)
-    cropped_image.save("%s_cropped.png" % imageFile)
-    # print(DeepFace.extract_faces("pics/yernur.png"))
-
-    print(result.get("verified"))
-    print(json.dumps(result, indent=2))
-
-    image_path = "pics/yernur3_1_2.png"
-    image_path2 = "pics/yernur3_1.png"
-
-    # Extract face embedding (represent) using a specific model
-    embedding = DeepFace.represent(img_path=image_path, model_name='VGG-Face')[0]['embedding']
-    embedding2 = DeepFace.represent(img_path=image_path2, model_name='VGG-Face')[0]['embedding']
-
-    # Store the embedding in a database or a file (e.g., JSON, CSV, database table)
-    # For this example, we will just print it
-    print("Face Embedding:", embedding)
-    similarity = 1 - cosine(embedding2, embedding)
-    # Define a threshold for similarity (e.g., 0.7)
-    threshold = 0.5
-    if similarity > threshold:
-        print("Face is recognized (match found).")
-    else:
-        print("Face is not recognized (no match).")
