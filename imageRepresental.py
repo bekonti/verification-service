@@ -10,6 +10,7 @@ from deepface import DeepFace
 global model_name
 model_name = 'Facenet512'
 
+
 async def verify_doc_with_liveness(img, vid):
     try:
         img_path = await get_path(img)
@@ -48,11 +49,11 @@ async def verify_doc_with_liveness(img, vid):
         array = []
         start_time = time.time()
         for iFrame in frames_base64:
-            imageDataFromFrameBase64 = f"data:image/jpg;base64,{iFrame}"
+            image_data_from_frame_base64 = f"data:image/jpg;base64,{iFrame}"
             array.append(
                 DeepFace.verify(
                     img_path,
-                    imageDataFromFrameBase64,
+                    image_data_from_frame_base64,
                     model_name=model_name
                 ).get("verified"))
 
@@ -74,15 +75,11 @@ async def verify_doc_with_liveness(img, vid):
 
 
 async def verify(img1, img2):
-    img_path_1 = await get_path(img1)
-    img_path_2 = await get_path(img2)
-
-    return DeepFace.verify(img_path_1, img_path_2, model_name=model_name)
+    return DeepFace.verify(await get_path(img1), await get_path(img2), model_name=model_name)
 
 
 async def get_represent(img1):
-    img_path = await get_path(img1)
-    return DeepFace.represent(img_path, model_name=model_name)
+    return DeepFace.represent(await get_path(img1), model_name=model_name)
 
 
 async def get_path(img1):
